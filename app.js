@@ -67,32 +67,8 @@ class JKSportsJournal {
                     "ticketsAvailable": false
                 }
             ],
-            "teams": [
-                {
-                    "id": 1,
-                    "name": "J&K Senior Cricket Team",
-                    "category": "Senior",
-                    "sport": "Cricket",
-                    "description": "Our flagship cricket team competing at state and national levels with a proud history of championship victories.",
-                    "achievements": ["State Champions 2024", "Regional Cup Winners 2023", "Best Team Award 2022"],
-                    "roster": 15,
-                    "headCoach": "Rajesh Sharma",
-                    "founded": "1995",
-                    "homeVenue": "J&K Sports Complex Cricket Ground"
-                },
-                {
-                    "id": 2,
-                    "name": "J&K Youth Football Academy",
-                    "category": "Youth",
-                    "sport": "Football",
-                    "description": "Development program for young footballers aged 8-18, focusing on technical skills and tactical awareness.",
-                    "achievements": ["Youth League Runners-up 2024", "Fair Play Award 2023"],
-                    "roster": 25,
-                    "headCoach": "Maria Rodriguez",
-                    "founded": "2020",
-                    "homeVenue": "Football Training Complex"
-                }
-            ],
+            "teams": [],
+
             "staff": [
                 {
                     "id": 1,
@@ -264,19 +240,67 @@ async fetchNewsFromSupabase() {
     console.error('fetchNewsFromSupabase failed', e);
   }
 }
+async fetchTeamsFromSupabase() {
+  try {
+    if (!window.supabase) {
+      console.warn('Supabase client not found on window. Skipping teams fetch.');
+      return;
+    }
+
+    const { data, error } = await window.supabase
+      .from('teams')
+      .select('id, name, short_name, logo_url, description, founded, coach, stadium, created_at')
+      .order('id', { ascending: true })
+      .limit(100);
+
+    if (error) {
+      console.error('Supabase teams fetch error:', error);
+      this.data.teams = [];
+      return;
+    }
+
+    if (!data) {
+      this.data.teams = [];
+      return;
+    }
+
+    // Map DB rows to the shape your app expects
+    this.data.teams = data.map(t => ({
+      id: t.id,
+      name: t.name || 'Team',
+      shortName: t.short_name || (t.name || '').split(' ')[0],
+      logo: t.logo_url || '',
+      description: t.description || '',
+      founded: t.founded || null,
+      coach: t.coach || '',
+      stadium: t.stadium || ''
+    }));
+
+    // If your app has a function to re-render the current page, call it.
+    // Example: this.loadPage && this.loadPage('teams'); // adjust if your method name differs
+  } catch (e) {
+    console.error('fetchTeamsFromSupabase failed', e);
+    this.data.teams = [];
+  }
+}
 
     init() {
-        this.bindEvents();
-        this.initializeRouter();
-        this.setupAccessibility();
-        // Load remote data first, then render initial page.
-// If Supabase is not available, proceed anyway after a small timeout so the site still loads.
-const fetchPromise = this.fetchNewsFromSupabase ? this.fetchNewsFromSupabase() : Promise.resolve();
-fetchPromise
-  .catch(err => { console.warn('Error fetching news (continuing):', err); })
-  .finally(() => { this.loadInitialPage(); });
+  this.bindEvents();
+  this.initializeRouter();
+  this.setupAccessibility();
 
-    }
+  // Load remote data first (news + teams), then render initial page.
+  // If Supabase fetch methods are not present, proceed anyway.
+  const fetches = [];
+  if (typeof this.fetchNewsFromSupabase === 'function') fetches.push(this.fetchNewsFromSupabase());
+  if (typeof this.fetchTeamsFromSupabase === 'function') fetches.push(this.fetchTeamsFromSupabase());
+
+  // Wait for all fetches (if any) to finish, then load the UI.
+  Promise.all(fetches)
+    .catch(err => { console.warn('Error fetching remote data (continuing):', err); })
+    .finally(() => { this.loadInitialPage(); });
+}
+
 
     bindEvents() {
         // Navigation events - Use event delegation to handle all navigation links
