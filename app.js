@@ -1246,45 +1246,62 @@ init() {
         `;
     }
 
-    renderTeamCard(team, detailed = false) {
-        return `
-            <div class="team-card">
-                <div class="team-card__header">
-                    <h3 class="team-card__name">${team.name}</h3>
-                    <div class="team-card__category">${team.category} • ${team.sport}</div>
+   renderTeamCard(team, detailed = false) {
+    // Defensive guards
+    if (!team || typeof team !== 'object') {
+        console.warn('renderTeamCard called with invalid team:', team);
+        return `<div class="team-card"><h3>Unnamed Team</h3><p>No data</p></div>`;
+    }
+    console.debug('Rendering team:', team);
+
+    const name = team.name || 'Unnamed Team';
+    const category = team.category || '';
+    const sport = team.sport || '';
+    // roster may be number or array; normalize to count or 0
+    const rosterCount = Array.isArray(team.roster) ? team.roster.length : (typeof team.roster === 'number' ? team.roster : 0);
+    const achievementsCount = Array.isArray(team.achievements) ? team.achievements.length : 0;
+    // staff may be object or array; pick first object if array
+    const staffObj = (team.staff && typeof team.staff === 'object' && !Array.isArray(team.staff)) ? team.staff
+                      : (Array.isArray(team.staff) && team.staff.length ? team.staff[0] : null);
+    const staffBio = staffObj && staffObj.bio ? staffObj.bio : '';
+    const staffExperience = staffObj && staffObj.experience ? staffObj.experience : '';
+    const staffCerts = staffObj && Array.isArray(staffObj.certifications) ? staffObj.certifications.join(', ')
+                          : (staffObj && staffObj.certifications ? String(staffObj.certifications) : '');
+
+    return `
+        <div class="team-card">
+            <div class="team-card__header">
+                <h3 class="team-card__name">${name}</h3>
+                <div class="team-card__category">${category}${category && sport ? ' • ' : ''}${sport}</div>
+            </div>
+            <div class="team-card__content">
+                <div class="team-card__stats">
+                    <div class="team-card__stat">
+                        <span class="team-card__stat-value">${rosterCount}</span>
+                        <span class="team-card__stat-label">Players</span>
+                    </div>
+                    <div class="team-card__stat">
+                        <span class="team-card__stat-value">${achievementsCount}</span>
+                        <span class="team-card__stat-label">Achievements</span>
+                    </div>
                 </div>
-                <div class="team-card__content">
-                    <div class="team-card__stats">
-                        <div class="team-card__stat">
-                            <span class="team-card__stat-value">${team.roster}</span>
-                            <span class="team-card__stat-label">Players</span>
-                        </div>
-                        <div class="team-card__stat">
-                            <span class="team-card__stat-value">${team.achievements.length}</span>
-                            <span class="team-card__stat-label">Achievements</span>
-                        </div>
-                    </div>
-                    <p>${team.description}</p>
-                    ${detailed ? `
-                        <div>
-                            <strong>Head Coach:</strong> ${team.headCoach}<br>
-                            <strong>Home Venue:</strong> ${team.homeVenue}<br>
-                            <strong>Founded:</strong> ${team.founded}
-                        </div>
+
+                <div class="team-card__body">
+                    ${detailed ? `<p class="team-card__desc">${team.description || ''}</p>` : ''}
+                    ${staffObj ? `
+                    <div class="staff-card" style="margin-top:1rem;">
+                        <p class="staff-card__bio">${staffBio}</p>
                         <div style="margin-top: 1rem;">
-                            <strong>Recent Achievements:</strong>
-                            <ul style="margin-top: 0.5rem;">
-                                ${team.achievements.map(achievement => `<li>${achievement}</li>`).join('')}
-                            </ul>
+                            <strong>Experience:</strong> ${staffExperience}<br>
+                            <strong>Certifications:</strong> ${staffCerts}
                         </div>
-                    ` : ''}
-                    <div class="card__actions" style="margin-top: 1rem;">
-                        <a href="#team-${team.id}" class="card__link">View Details</a>
-                    </div>
+                    </div>` : ''}
                 </div>
             </div>
-        `;
-    }
+        </div>
+    `;
+}
+
 
     renderStaffCard(staff) {
         return `
