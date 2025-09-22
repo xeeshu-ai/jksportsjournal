@@ -289,17 +289,19 @@ async fetchTeamsFromSupabase() {
   this.initializeRouter();
   this.setupAccessibility();
 
-  // Load remote data first (news + teams), then render initial page.
-  // If Supabase fetch methods are not present, proceed anyway.
-  const fetches = [];
-  if (typeof this.fetchNewsFromSupabase === 'function') fetches.push(this.fetchNewsFromSupabase());
-  if (typeof this.fetchTeamsFromSupabase === 'function') fetches.push(this.fetchTeamsFromSupabase());
+  // Render initial page immediately
+  this.loadInitialPage();
 
-  // Wait for all fetches (if any) to finish, then load the UI.
-  Promise.all(fetches)
-    .catch(err => { console.warn('Error fetching remote data (continuing):', err); })
-    .finally(() => { this.loadInitialPage(); });
+  // Fetch remote data in the background
+  if (typeof this.fetchNewsFromSupabase === 'function') {
+    this.fetchNewsFromSupabase().catch(err => console.warn('News fetch error:', err));
+  }
+
+  if (typeof this.fetchTeamsFromSupabase === 'function') {
+    this.fetchTeamsFromSupabase().catch(err => console.warn('Teams fetch error:', err));
+  }
 }
+
 
 
     bindEvents() {
