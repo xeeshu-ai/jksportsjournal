@@ -284,7 +284,7 @@ async fetchTeamsFromSupabase() {
   }
 }
 
-    init() {
+   init() {
   this.bindEvents();
   this.initializeRouter();
   this.setupAccessibility();
@@ -292,15 +292,27 @@ async fetchTeamsFromSupabase() {
   // Render initial page immediately
   this.loadInitialPage();
 
-  // Fetch remote data in the background
+  // Show placeholder for teams
+  const teamsContainer = document.getElementById('teams-container');
+  if (teamsContainer) teamsContainer.innerHTML = '<p>Loading teams...</p>';
+
+  // Fetch teams in background and update DOM when ready
+  if (typeof this.fetchTeamsFromSupabase === 'function') {
+    this.fetchTeamsFromSupabase()
+      .then(teams => {
+        if (teamsContainer) {
+          teamsContainer.innerHTML = this.renderTeams(teams); // make sure renderTeams formats your teams
+        }
+      })
+      .catch(err => console.warn('Teams fetch error:', err));
+  }
+
+  // Fetch news (same as before)
   if (typeof this.fetchNewsFromSupabase === 'function') {
     this.fetchNewsFromSupabase().catch(err => console.warn('News fetch error:', err));
   }
-
-  if (typeof this.fetchTeamsFromSupabase === 'function') {
-    this.fetchTeamsFromSupabase().catch(err => console.warn('Teams fetch error:', err));
-  }
 }
+
 
 
 
