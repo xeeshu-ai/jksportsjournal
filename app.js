@@ -284,32 +284,39 @@ async fetchTeamsFromSupabase() {
   }
 }
 
-   init() {
+   
+init() {
   this.bindEvents();
   this.initializeRouter();
   this.setupAccessibility();
 
-  // Render initial page immediately
   this.loadInitialPage();
 
-  // Show placeholder for teams
   const teamsContainer = document.getElementById('teams-container');
   if (teamsContainer) teamsContainer.innerHTML = '<p>Loading teams...</p>';
 
-  // Fetch teams in background and update DOM when ready
   if (typeof this.fetchTeamsFromSupabase === 'function') {
     this.fetchTeamsFromSupabase()
       .then(teams => {
-        if (teamsContainer) {
-          teamsContainer.innerHTML = this.renderTeams(teams); // make sure renderTeams formats your teams
+        console.log('Teams fetched:', teams); // debug log
+        if (teams && teams.length && teamsContainer) {
+          teamsContainer.innerHTML = this.renderTeams 
+            ? this.renderTeams(teams) 
+            : `<pre>${JSON.stringify(teams, null, 2)}</pre>`; // fallback
+        } else if (teamsContainer) {
+          teamsContainer.innerHTML = '<p>No teams found.</p>';
         }
       })
-      .catch(err => console.warn('Teams fetch error:', err));
+      .catch(err => {
+        console.warn('Teams fetch error:', err);
+        if (teamsContainer) teamsContainer.innerHTML = '<p>Error loading teams.</p>';
+      });
   }
 
-  // Fetch news (same as before)
   if (typeof this.fetchNewsFromSupabase === 'function') {
-    this.fetchNewsFromSupabase().catch(err => console.warn('News fetch error:', err));
+    this.fetchNewsFromSupabase()
+      .then(news => console.log('News fetched:', news))
+      .catch(err => console.warn('News fetch error:', err));
   }
 }
 
