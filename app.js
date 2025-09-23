@@ -1,5 +1,39 @@
 // J&K Sports Journal - Main Application JavaScript
 // Comprehensive sports club website with accessibility, SEO, and interactive features
+// --- Loader helpers & safety hooks (paste near top of app.js) ---
+(function(){
+  if (window.__jk_loader_helpers_installed) return;
+  window.__jk_loader_helpers_installed = true;
+
+  window.showLoading = function() {
+    try {
+      const el = document.querySelector('.loading-indicator');
+      if (!el) { console.warn('showLoading: .loading-indicator not found'); return; }
+      el.classList.remove('hidden');
+      el.style.display = '';
+      el.setAttribute('aria-hidden','false');
+      console.debug('showLoading called');
+    } catch(e){ console.error('showLoading error', e); }
+  };
+
+  window.hideLoading = function() {
+    try {
+      const el = document.querySelector('.loading-indicator');
+      if (!el) { console.warn('hideLoading: .loading-indicator not found'); return; }
+      el.classList.add('hidden');
+      el.style.display = 'none';
+      el.setAttribute('aria-hidden','true');
+      console.debug('hideLoading called');
+    } catch(e){ console.error('hideLoading error', e); }
+  };
+
+  // Safety nets
+  window.addEventListener('load', () => setTimeout(()=>{ try{ window.hideLoading(); }catch(e){} }, 100));
+  window.addEventListener('hashchange', () => { try{ window.hideLoading(); }catch(e){} });
+  window.addEventListener('unhandledrejection', (ev) => { console.error('Unhandled promise rejection:', ev.reason); try{ window.hideLoading(); }catch(e){} });
+  // last-resort hide after 10s
+  setTimeout(()=>{ try{ window.hideLoading(); }catch(e){} }, 10000);
+})();
 
 class JKSportsJournal {
     constructor() {
@@ -199,6 +233,7 @@ class JKSportsJournal {
             ]
         };
     }
+    
 // Fetch news from Supabase and map DB fields to the format expected by the app
 async fetchNewsFromSupabase() {
   try {
@@ -533,6 +568,10 @@ init() {
     renderPageContent(page) {
         const contentContainer = document.getElementById('page-content');
         let content = '';
+if (page === 'news' && this.currentSlug) {
+  this.renderNewsArticle(this.currentSlug);
+  return;
+}
 
         switch (page) {
             case 'home':
