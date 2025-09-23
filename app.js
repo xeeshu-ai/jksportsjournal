@@ -387,20 +387,40 @@ init() {
         window.addEventListener('resize', this.handleResize.bind(this));
     }
 
-    initializeRouter() {
-        // Handle browser back/forward buttons
-        window.addEventListener('popstate', (e) => {
-            if (e.state && e.state.page) {
-                this.loadPage(e.state.page, false);
-            }
-        });
-
-        // Handle initial hash
-        const hash = window.location.hash.slice(1);
-        if (hash) {
-            this.currentPage = hash;
+   initializeRouter() {
+    // Handle browser back/forward (history)
+    window.addEventListener('popstate', (e) => {
+        if (e.state && e.state.page) {
+            this.loadPage(e.state.page, false);
         }
-    }
+    });
+
+    // Helper to parse a hash like "#/news/my-slug" -> {page: 'news', slug: 'my-slug'}
+    const parseHash = () => {
+        const raw = (window.location.hash || '#/home').slice(1); // remove leading '#'
+        // raw could be "/news/slug" or "/home"
+        const parts = raw.split('/').filter(Boolean); // remove empty segments
+        if (parts.length === 0) return { page: 'home', slug: null };
+        if (parts[0] === 'news' && parts.length >= 2) {
+            return { page: 'news', slug: decodeURIComponent(parts.slice(1).join('/')) };
+        }
+        // default: first segment as page
+        return { page: parts[0], slug: null };
+    };
+
+    // Handle initial hash
+    const parsed = parseHash();
+    this.currentSlug = parsed.slug || null;
+    this.currentPage = parsed.page || 'home';
+
+    // Listen for further hash changes and route accordingly
+    window.addEventListener('hashchange', () => {
+        const p = parseHash();
+        this.currentSlug = p.slug || null;
+        this.loadPage(p.page || 'home', true);
+    }, false);
+}
+
 
     setupAccessibility() {
         // Add skip link functionality
@@ -561,8 +581,17 @@ init() {
                 content = this.render404Page();
         }
 
-        contentContainer.innerHTML = content;
-        
+        contentContainer.innerHTML = content; 
+        // If we're on news and a slug is present, render the single article view
+if (cleanPage === 'news' && this.currentSlug) {
+    // renderNewsArticle will replace page-content with the single article
+    if (typeof this.renderNewsArticle === 'function') {
+        this.renderNewsArticle(this.currentSlug);
+        // clear currentSlug so subsequent navigation to news shows list again
+        this.currentSlug = null;
+    }
+}
+
         // Bind new events for dynamically loaded content
         this.bindDynamicEvents();
     }
@@ -670,6 +699,84 @@ init() {
             </section>
         `;
     }
+// Render a single news article by slug (replace page-content with only this article)
+async renderNewsArticle(slug) {
+  const container = document.getElementById('page-content');
+  if (!container) {
+    console.error('page-content container not found');
+    return;
+  }
+  const loadingEl = document.querySelector('.loading-indicator');
+  if (loadingEl) loadingEl.classList.remove('hidden');
+
+  try {
+    const { data: article, error } = await window.supabase
+      .from('news')
+      .select('id, title, slug, summary, content, "featuredImage", featured_image, author, author_name, "datePublished", published_at, created_at, tags')
+      .eq('slug', slug)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Supabase error fetching article:', error);
+      container.innerHTML = `<div class="article-error"><p>Unable to load the article. See console for details.</p><p><a href="#/news">Back to News</a></p></div>`;
+      return;
+    }
+    if (!article) {
+      container.innerHTML = `<div class="article-notfound"><h2>Article not found</h2><p>The article "${slug}" does not exist.</p><p><a href="#/news">Back to News</a></p></div>`;
+      return;
+    }
+
+    const imgPath = article.featuredImage || article.featured_image || '';
+    let imgHtml = '';
+    if (imgPath) {
+      if (imgPath.startsWith('http')) {
+        imgHtml = `<img src="${imgPath}" alt="${(article.title||'')}" class="article-featured" loading="lazy">`;
+      } else {
+        try {
+          const publicUrlObj = window.supabase.storage.from('news-images').getPublicUrl(imgPath);
+          const publicUrl = publicUrlObj?.data?.publicUrl || '';
+          imgHtml = publicUrl ? `<img src="${publicUrl}" alt="${(article.title||'')}" class="article-featured" loading="lazy">` : '';
+        } catch (e) {
+          console.warn('Could not get public URL for image', e);
+        }
+      }
+    }
+
+    const author = article.author_name || article.author || 'Sports Desk';
+    const published = article.published_at || article.datePublished || article.created_at || null;
+    const publishedStr = published ? new Date(published).toLocaleString() : '';
+
+    container.innerHTML = `
+      <article class="news-article">
+        <div class="container">
+          <a href="#/news" class="back-link">← Back to News</a>
+          <h1 class="article-title">${article.title || 'Untitled'}</h1>
+          <div class="article-meta">By ${author}${publishedStr ? ' • ' + publishedStr : ''}</div>
+          ${imgHtml}
+          <div class="article-body">${article.content || article.summary || ''}</div>
+          <div class="article-footer" style="margin-top:2rem;">
+            <a href="#/news" class="btn">← Back to News</a>
+          </div>
+        </div>
+      </article>
+    `;
+
+    // Update breadcrumb if present
+    const bc = document.getElementById('breadcrumb-list');
+    if (bc) {
+      bc.innerHTML = `<li class="breadcrumb__item"><a href="#home">Home</a></li>
+                      <li class="breadcrumb__item"><a href="#/news">News</a></li>
+                      <li class="breadcrumb__item" aria-current="page">${article.title || slug}</li>`;
+    }
+
+    try { document.title = `${article.title || 'Article'} — J&K Sports Journal`; } catch(e) {}
+  } catch (e) {
+    console.error('renderNewsArticle exception', e);
+    container.innerHTML = `<p>Error loading article.</p>`;
+  } finally {
+    if (loadingEl) loadingEl.classList.add('hidden');
+  }
+}
 
     renderFixturesPage() {
         return `
@@ -1821,5 +1928,6 @@ init() {
 
 // Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    new JKSportsJournal();
+    const app = new JKSportsJournal();
+    window.appInstance = app;
 });
