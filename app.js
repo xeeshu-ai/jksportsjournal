@@ -1198,32 +1198,33 @@ init() {
     }
 
     // Component rendering methods
-    renderNewsCard(article, detailed = false) {
-        return `
-            <article class="card">
-                <img src="${article.featuredImage}" alt="${article.title}" class="card__image" loading="lazy">
-                <div class="card__content">
-                    <div class="card__meta">
-                        <time datetime="${article.datePublished}">${this.formatDate(article.datePublished)}</time>
-                        <span>•</span>
-                        <span>By ${article.author}</span>
-                    </div>
-                    <h3 class="card__title">
-                        <a href="#news-article-${article.slug}">${article.title}</a>
-                    </h3>
-                    <p class="card__excerpt">${article.summary}</p>
-                    ${detailed ? `
-                        <div class="tags">
-                            ${article.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
-                        </div>
-                    ` : ''}
-                    <div class="card__actions">
-                        <a href="#news-article-${article.slug}" class="card__link">Read More</a>
-                    </div>
+   renderNewsCard(article, detailed = false) {
+    return `
+        <article class="card">
+            <img src="${article.featuredImage || ''}" alt="${article.title || ''}" class="card__image" loading="lazy">
+            <div class="card__content">
+                <div class="card__meta">
+                    <time datetime="${article.datePublished || ''}">${this.formatDate(article.datePublished)}</time>
+                    <span>•</span>
+                    <span>By ${article.author || 'Sports Desk'}</span>
                 </div>
-            </article>
-        `;
-    }
+                <h3 class="card__title">
+                    <a href="#/news/${encodeURIComponent(article.slug || '')}">${article.title || 'Untitled'}</a>
+                </h3>
+                <p class="card__excerpt">${article.summary || ''}</p>
+                ${detailed ? `
+                    <div class="tags">
+                        ${(article.tags || []).map(tag => `<span class="tag">${tag}</span>`).join('')}
+                    </div>
+                ` : ''}
+                <div class="card__actions">
+                    <a href="#/news/${encodeURIComponent(article.slug || '')}" class="card__link">Read More</a>
+                </div>
+            </div>
+        </article>
+    `;
+}
+
 
     renderFixtureCard(fixture, detailed = false) {
         return `
