@@ -1049,21 +1049,20 @@ async renderArticlePage() {
 
         // FORCE extract article ID from URL if currentArticleId is not set
         let articleId = this.currentArticleId;
-        
         if (!articleId) {
-            // Extract directly from URL hash
-            const hash = window.location.hash; // e.g. "#article/123"
-            const match = hash.match(/#article\/(\d+)/);
+            // Extract directly from URL hash (e.g. #article/123)
+            const hash = window.location.hash;
+            const match = hash.match(/article\/(\d+)/);
             if (match) {
                 articleId = match[1];
-                console.log('Extracted articleId from URL:', articleId);
             }
         }
-        
+
         console.log('Looking for article with ID:', articleId);
-        
+
         if (!articleId) {
             console.log('No article ID found');
+            if (loadingEl) loadingEl.classList.add('hidden');
             return this.render404Page();
         }
 
@@ -1072,13 +1071,15 @@ async renderArticlePage() {
             await this.fetchNewsFromSupabase();
         }
 
-        console.log('Available news articles:', this.data.news.map(a => ({id: a.id, title: a.title})));
+        console.log('Available news articles:', this.data.news.map(a => ({ id: a.id, title: a.title })));
 
         // Find the article by ID (convert both to string for comparison)
         const article = this.data.news.find(a => String(a.id) === String(articleId));
-        
+
         if (!article) {
             console.log('Article not found with ID:', articleId);
+            console.log('Available IDs:', this.data.news.map(a => a.id));
+            if (loadingEl) loadingEl.classList.add('hidden');
             return this.render404Page();
         }
 
@@ -1086,7 +1087,6 @@ async renderArticlePage() {
 
         // Try to fetch full content from news_articles table
         let fullContent = article.content || article.summary;
-        
         if (window.supabase && article.id) {
             try {
                 const { data: articleData, error } = await window.supabase
@@ -1094,7 +1094,7 @@ async renderArticlePage() {
                     .select('content')
                     .eq('news_id', article.id)
                     .single();
-                
+
                 if (!error && articleData && articleData.content) {
                     fullContent = articleData.content;
                     console.log('Found detailed content in news_articles table');
@@ -1112,14 +1112,12 @@ async renderArticlePage() {
                     </div>
                     
                     ${article.featuredImage ? `
-                        <img src="${article.featuredImage}" 
-                             alt="${article.title}" 
+                        <img src="${article.featuredImage}" alt="${article.title}" 
                              style="width: 100%; height: 400px; object-fit: cover; border-radius: var(--radius-lg); margin-bottom: 2rem;">
-                    ` : ''}
+                    ` : ''} 
                     
                     <div class="article-header" style="margin-bottom: 2rem;">
                         <h1 style="margin-bottom: 1rem; font-size: 2.5rem; line-height: 1.2;">${article.title}</h1>
-                        
                         <div class="article-meta" style="color: var(--color-text-secondary); margin-bottom: 1rem; font-size: 1rem;">
                             <time datetime="${article.datePublished}">${this.formatDate(article.datePublished)}</time>
                             ${article.author ? `<span> • By ${article.author}</span>` : ''}
@@ -1143,15 +1141,17 @@ async renderArticlePage() {
             </article>
         `;
 
-        this.hideLoading();
+        if (loadingEl) loadingEl.classList.add('hidden');
         return content;
 
     } catch (error) {
         console.error('Error rendering article:', error);
-        this.hideLoading();
+        const loadingEl = document.querySelector('.loading-indicator');
+        if (loadingEl) loadingEl.classList.add('hidden');
         return this.render404Page();
     }
 }
+
 
 
 // Helper method to format article content
