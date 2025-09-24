@@ -441,10 +441,12 @@ init() {
         breadcrumbList.innerHTML = breadcrumbHTML;
     }
 
-    renderPageContent(page) {
-        const contentContainer = document.getElementById('page-content');
-        let content = '';
-if (page === 'news' && this.currentSlug) {
+   renderPageContent(page) {
+    const contentContainer = document.getElementById('page-content');
+    let content = '';
+    
+    // Only handle news with slug if it's actually a news page with slug
+    if (page === 'news' && this.currentSlug && !this.currentArticleId) {
         this.renderNewsArticle(this.currentSlug);
         return;
     }
@@ -471,7 +473,6 @@ if (page === 'news' && this.currentSlug) {
                 this.bindDynamicEvents();
             });
             return;
-                
             case 'fixtures':
                 content = this.renderFixturesPage();
                 break;
