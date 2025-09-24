@@ -677,14 +677,10 @@ initializeRouter() {
             await this.fetchNewsFromSupabase();
         }
         
-        // Filter to show only today's articles by default
+        // Get today's date for the date picker default value
         const today = this.getTodayDate();
-        const todaysNews = this.data.news.filter(article => {
-            if (!article.datePublished) return false;
-            const articleDate = new Date(article.datePublished).toISOString().split('T')[0];
-            return articleDate === today;
-        });
         
+        // For now, show ALL articles by default (we'll filter by date when user selects a date)
         const content = `
             <section class="section">
                 <div class="container">
@@ -706,17 +702,18 @@ initializeRouter() {
                             </select>
                             
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <label for="news-date" style="white-space: nowrap;">Show articles from:</label>
-                                <input type="date" class="form-control" id="news-date" value="${today}" style="max-width: 160px;">
+                                <label for="news-date" style="white-space: nowrap;">Filter by date:</label>
+                                <input type="date" class="form-control" id="news-date" style="max-width: 160px;">
                                 <button type="button" class="btn btn--outline" id="today-btn" style="white-space: nowrap;">Today</button>
+                                <button type="button" class="btn btn--outline" id="clear-date-btn" style="white-space: nowrap;">All</button>
                             </div>
                         </div>
                     </div>
                     
                     <div class="card-grid" id="news-grid">
-                        ${todaysNews.length ? 
-                            todaysNews.map(article => this.renderNewsCard(article, true)).join('') :
-                            `<p>No articles published today. <button type="button" id="show-all-btn" class="btn btn--outline">Show All Articles</button></p>`
+                        ${this.data.news && this.data.news.length ? 
+                            this.data.news.map(article => this.renderNewsCard(article, true)).join('') :
+                            '<p>No news articles available.</p>'
                         }
                     </div>
                 </div>
@@ -729,9 +726,10 @@ initializeRouter() {
     } catch (error) {
         console.error('Error rendering news page:', error);
         this.hideLoading();
-        return `<section class="section"><div class="container"><p>Error loading news.</p></div></section>`;
+        return `<section class="section"><div class="container"><div class="section__header"><h1 class="section__title">Latest News</h1><p style="color: red;">Error loading news articles. Please try again later.</p></div></div></section>`;
     }
 }
+
 
 
 
@@ -837,6 +835,10 @@ filterNewsByDate(selectedDate) {
         `<p>No articles found for ${selectedDate || 'the selected date'}. <button type="button" id="show-all-btn" class="btn btn--outline">Show All Articles</button></p>`;
 }
 
+// Helper method to get today's date in YYYY-MM-DD format
+getTodayDate() {
+    return new Date().toISOString().split('T')[0];
+}
 
 
 
@@ -2114,6 +2116,27 @@ if (todayBtn) {
         const today = this.getTodayDate();
         dateInput.value = today;
         this.filterNewsByDate(today);
+    });
+}
+
+// Clear date filter button
+const clearDateBtn = document.getElementById('clear-date-btn');
+if (clearDateBtn) {
+    clearDateBtn.addEventListener('click', () => {
+        const dateInput = document.getElementById('news-date');
+        const newsGrid = document.getElementById('news-grid');
+        
+        // Clear date input
+        dateInput.value = '';
+        
+        // Clear search input
+        const searchInput = document.getElementById('news-search');
+        if (searchInput) searchInput.value = '';
+        
+        // Show all articles
+        if (newsGrid && this.data.news) {
+            newsGrid.innerHTML = this.data.news.map(article => this.renderNewsCard(article, true)).join('');
+        }
     });
 }
 
