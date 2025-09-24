@@ -463,6 +463,16 @@ initializeRouter() {
     const contentContainer = document.getElementById('page-content');
     let content = '';
     
+    // DIRECT HASH HANDLING - Extract article ID from URL if needed
+    const hash = window.location.hash;
+    const articleMatch = hash.match(/#article\/(\d+)/);
+    
+    if (articleMatch) {
+        console.log('Direct hash match found, article ID:', articleMatch[1]);
+        this.currentArticleId = articleMatch[1];
+        page = 'article'; // Force page to be 'article'
+    }
+    
     // Only handle news with slug if it's actually a news page with slug
     if (page === 'news' && this.currentSlug && !this.currentArticleId) {
         console.log('Rendering news article by slug');
@@ -473,7 +483,6 @@ initializeRouter() {
     switch (page) {
         case 'home':
             console.log('Rendering home page');
-            // Make home page also async to wait for news
             this.renderHomePage().then(homeContent => {
                 contentContainer.innerHTML = homeContent;
                 this.bindDynamicEvents();
@@ -481,15 +490,13 @@ initializeRouter() {
             return;
         case 'news':
             console.log('Rendering news page');
-            // Handle async news loading
             this.renderNewsPage().then(newsContent => {
                 contentContainer.innerHTML = newsContent;
                 this.bindDynamicEvents();
             });
             return;
         case 'article':
-            console.log('Rendering article page');
-            // Handle individual articles
+            console.log('Rendering article page with ID:', this.currentArticleId);
             this.renderArticlePage().then(articleContent => {
                 document.getElementById('page-content').innerHTML = articleContent;
                 this.bindDynamicEvents();
@@ -544,6 +551,18 @@ initializeRouter() {
             content = this.renderPressKitPage();
             break;
         default:
+            // Handle cases where page comes as "article/1" instead of just "article"
+            if (page.startsWith('article/')) {
+                console.log('Handling article route in default case:', page);
+                const articleId = page.split('/')[1];
+                this.currentArticleId = articleId;
+                this.renderArticlePage().then(articleContent => {
+                    document.getElementById('page-content').innerHTML = articleContent;
+                    this.bindDynamicEvents();
+                });
+                return;
+            }
+            
             console.log('DEFAULT CASE - showing 404 for page:', page);
             content = this.render404Page();
     }
