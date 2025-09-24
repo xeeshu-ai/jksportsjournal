@@ -744,17 +744,28 @@ filterNewsByCategory(category) {
     const newsGrid = document.getElementById('news-grid');
     if (!newsGrid) return;
 
+    // Get current date filter
+    const dateInput = document.getElementById('news-date');
+    const selectedDate = dateInput ? dateInput.value : null;
+
     let filteredNews = this.data.news;
     
+    // First apply date filter (if set)
+    if (selectedDate) {
+        const filterDate = new Date(selectedDate).toISOString().split('T')[0];
+        filteredNews = filteredNews.filter(article => {
+            if (!article.datePublished) return false;
+            const articleDate = new Date(article.datePublished).toISOString().split('T')[0];
+            return articleDate === filterDate;
+        });
+    }
+    
+    // Then apply category filter (if set)
     if (category && category !== '') {
-        // Filter by category - check if article tags include the category
-        filteredNews = this.data.news.filter(article => {
+        filteredNews = filteredNews.filter(article => {
             if (!article.tags) return false;
-            
-            // Handle both array and string tags
             const tags = Array.isArray(article.tags) ? article.tags : 
                         typeof article.tags === 'string' ? article.tags.split(',').map(t => t.trim()) : [];
-            
             return tags.some(tag => tag.toLowerCase().includes(category.toLowerCase()));
         });
     }
@@ -762,8 +773,9 @@ filterNewsByCategory(category) {
     // Re-render the filtered news
     newsGrid.innerHTML = filteredNews.length ? 
         filteredNews.map(article => this.renderNewsCard(article, true)).join('') :
-        '<p>No articles found in this category.</p>';
+        '<p>No articles found for the selected filters.</p>';
 }
+
 
 
 
@@ -810,23 +822,83 @@ searchNews(searchTerm) {
 
 
 
+// Combined filtering method that respects both date and category
+applyAllFilters() {
+    const newsGrid = document.getElementById('news-grid');
+    if (!newsGrid) return;
+
+    // Get current filter values
+    const dateInput = document.getElementById('news-date');
+    const categoryInput = document.getElementById('news-filter');
+    const selectedDate = dateInput ? dateInput.value : null;
+    const selectedCategory = categoryInput ? categoryInput.value : '';
+
+    let filteredNews = this.data.news;
+    
+    // Apply date filter first (if set)
+    if (selectedDate) {
+        const filterDate = new Date(selectedDate).toISOString().split('T')[0];
+        filteredNews = filteredNews.filter(article => {
+            if (!article.datePublished) return false;
+            const articleDate = new Date(article.datePublished).toISOString().split('T')[0];
+            return articleDate === filterDate;
+        });
+    }
+    
+    // Apply category filter (if set)
+    if (selectedCategory && selectedCategory !== '') {
+        filteredNews = filteredNews.filter(article => {
+            if (!article.tags) return false;
+            const tags = Array.isArray(article.tags) ? article.tags : 
+                        typeof article.tags === 'string' ? article.tags.split(',').map(t => t.trim()) : [];
+            return tags.some(tag => tag.toLowerCase().includes(selectedCategory.toLowerCase()));
+        });
+    }
+    
+    // Re-render the filtered news
+    newsGrid.innerHTML = filteredNews.length ? 
+        filteredNews.map(article => this.renderNewsCard(article, true)).join('') :
+        '<p>No articles found for the selected filters.</p>';
+}
+
+
+// Helper method to get today's date in YYYY-MM-DD format
+getTodayDate() {
+    return new Date().toISOString().split('T')[0];
+}
+
+
+
+
 filterNewsByDate(selectedDate) {
     const newsGrid = document.getElementById('news-grid');
     if (!newsGrid) return;
 
+    // Get current category filter
+    const categoryInput = document.getElementById('news-filter');
+    const selectedCategory = categoryInput ? categoryInput.value : '';
+
     let filteredNews = this.data.news;
     
+    // First apply date filter (if set)
+    
     if (selectedDate) {
-        // Convert selected date to YYYY-MM-DD format for comparison
+
         const filterDate = new Date(selectedDate).toISOString().split('T')[0];
-        
-        filteredNews = this.data.news.filter(article => {
+        filteredNews = filteredNews.filter(article => {
             if (!article.datePublished) return false;
-            
-            // Convert article date to YYYY-MM-DD format
             const articleDate = new Date(article.datePublished).toISOString().split('T')[0];
-            
             return articleDate === filterDate;
+        });
+    }
+    
+    // Then apply category filter (if set)
+    if (selectedCategory && selectedCategory !== '') {
+        filteredNews = filteredNews.filter(article => {
+            if (!article.tags) return false;
+            const tags = Array.isArray(article.tags) ? article.tags : 
+                        typeof article.tags === 'string' ? article.tags.split(',').map(t => t.trim()) : [];
+            return tags.some(tag => tag.toLowerCase().includes(selectedCategory.toLowerCase()));
         });
     }
     
@@ -839,13 +911,53 @@ filterNewsByDate(selectedDate) {
     // Re-render the filtered news
     newsGrid.innerHTML = filteredNews.length ? 
         filteredNews.map(article => this.renderNewsCard(article, true)).join('') :
-        `<p>No articles found for ${selectedDate || 'the selected date'}. <button type="button" id="show-all-btn" class="btn btn--outline">Show All Articles</button></p>`;
+        `<p>No articles found for ${selectedDate || 'the selected date'}.</p>`;
 }
 
-// Helper method to get today's date in YYYY-MM-DD format
-getTodayDate() {
-    return new Date().toISOString().split('T')[0];
+
+
+
+
+// Combined filtering method that respects both date and category
+applyAllFilters() {
+    const newsGrid = document.getElementById('news-grid');
+    if (!newsGrid) return;
+
+    // Get current filter values
+    const dateInput = document.getElementById('news-date');
+    const categoryInput = document.getElementById('news-filter');
+    const selectedDate = dateInput ? dateInput.value : null;
+    const selectedCategory = categoryInput ? categoryInput.value : '';
+
+    let filteredNews = this.data.news;
+    
+    // Apply date filter first (if set)
+    if (selectedDate) {
+        const filterDate = new Date(selectedDate).toISOString().split('T')[0];
+        filteredNews = filteredNews.filter(article => {
+            if (!article.datePublished) return false;
+            const articleDate = new Date(article.datePublished).toISOString().split('T')[0];
+            return articleDate === filterDate;
+        });
+    }
+    
+    // Apply category filter (if set)
+    if (selectedCategory && selectedCategory !== '') {
+        filteredNews = filteredNews.filter(article => {
+            if (!article.tags) return false;
+            const tags = Array.isArray(article.tags) ? article.tags : 
+                        typeof article.tags === 'string' ? article.tags.split(',').map(t => t.trim()) : [];
+            return tags.some(tag => tag.toLowerCase().includes(selectedCategory.toLowerCase()));
+        });
+    }
+    
+    // Re-render the filtered news
+    newsGrid.innerHTML = filteredNews.length ? 
+        filteredNews.map(article => this.renderNewsCard(article, true)).join('') :
+        '<p>No articles found for the selected filters.</p>';
 }
+
+
 
 
 
@@ -2057,108 +2169,120 @@ formatArticleContent(content) {
     }
 
     bindDynamicEvents() {
-        // FAQ toggles
-        document.querySelectorAll('.faq-question').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const answer = button.nextElementSibling;
-                const isExpanded = button.getAttribute('aria-expanded') === 'true';
-                
-                button.setAttribute('aria-expanded', !isExpanded);
-                answer.classList.toggle('hidden');
-                
-                const icon = button.querySelector('span');
-                icon.textContent = isExpanded ? '+' : '−';
-            });
+    // FAQ toggles
+    document.querySelectorAll('.faq-question').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const answer = button.nextElementSibling;
+            const isExpanded = button.getAttribute('aria-expanded') === 'true';
+            
+            button.setAttribute('aria-expanded', !isExpanded);
+            answer.classList.toggle('hidden');
+            
+            const icon = button.querySelector('span');
+            icon.textContent = isExpanded ? '+' : '-';
         });
+    });
 
-        // Gallery lightbox
-        document.querySelectorAll('.gallery-item').forEach(item => {
-            item.addEventListener('click', (e) => {
-                const image = item.dataset.image;
-                this.showImageLightbox(image);
-            });
+    // Gallery lightbox
+    document.querySelectorAll('.gallery-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            const image = item.dataset.image;
+            this.showImageLightbox(image);
         });
+    });
 
-        // Membership application
-        document.querySelectorAll('.membership-apply').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const tier = button.dataset.tier;
-                this.showMembershipApplication(tier);
-            });
+    // Membership application
+    document.querySelectorAll('.membership-apply').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const tier = button.dataset.tier;
+            this.showMembershipApplication(tier);
         });
+    });
 
-        // Contact form
-        const contactForm = document.getElementById('contact-form');
-        if (contactForm) {
-            contactForm.addEventListener('submit', this.handleContactForm.bind(this));
-        }
+    // Contact form
+    const contactForm = document.getElementById('contact-form');
+    if (contactForm) {
+        contactForm.addEventListener('submit', this.handleContactForm.bind(this));
+    }
 
-        // Category filter
+    // Category filter
     const newsFilter = document.getElementById('news-filter');
     if (newsFilter) {
         newsFilter.addEventListener('change', (e) => {
-            this.filterNewsByCategory(e.target.value);
+            this.applyAllFilters();
         });
     }
- // Search functionality
+
+    // Search functionality
     const newsSearch = document.getElementById('news-search');
     if (newsSearch) {
         newsSearch.addEventListener('input', (e) => {
             this.searchNews(e.target.value);
         });
     }
-// Date filter
-const newsDate = document.getElementById('news-date');
-if (newsDate) {
-    newsDate.addEventListener('change', (e) => {
-        this.filterNewsByDate(e.target.value);
-    });
-}
 
-// Today button
-const todayBtn = document.getElementById('today-btn');
-if (todayBtn) {
-    todayBtn.addEventListener('click', () => {
-        const dateInput = document.getElementById('news-date');
-        const today = this.getTodayDate();
-        dateInput.value = today;
-        this.filterNewsByDate(today);
-    });
-}
-
-// Clear date filter button
-const clearDateBtn = document.getElementById('clear-date-btn');
-if (clearDateBtn) {
-    clearDateBtn.addEventListener('click', () => {
-        const dateInput = document.getElementById('news-date');
-        const newsGrid = document.getElementById('news-grid');
-        
-        // Clear date input
-        dateInput.value = '';
-        
-        // Clear search input
-        const searchInput = document.getElementById('news-search');
-        if (searchInput) searchInput.value = '';
-        
-        // Show all articles
-        if (newsGrid && this.data.news) {
-            newsGrid.innerHTML = this.data.news.map(article => this.renderNewsCard(article, true)).join('');
-        }
-    });
-}
-
-// Show all articles button
-const showAllBtn = document.getElementById('show-all-btn');
-if (showAllBtn) {
-    showAllBtn.addEventListener('click', () => {
-        const newsGrid = document.getElementById('news-grid');
-        if (newsGrid && this.data.news) {
-            newsGrid.innerHTML = this.data.news.map(article => this.renderNewsCard(article, true)).join('');
-        }
-    });
-}
-
+    // Date filter
+    const newsDate = document.getElementById('news-date');
+    if (newsDate) {
+        newsDate.addEventListener('change', (e) => {
+            this.applyAllFilters();
+        });
     }
+
+    // Today button
+    const todayBtn = document.getElementById('today-btn');
+    if (todayBtn) {
+        todayBtn.addEventListener('click', () => {
+            const dateInput = document.getElementById('news-date');
+            const today = this.getTodayDate();
+            dateInput.value = today;
+            this.applyAllFilters();
+        });
+    }
+
+    // Clear date filter button
+    const clearDateBtn = document.getElementById('clear-date-btn');
+    if (clearDateBtn) {
+        clearDateBtn.addEventListener('click', () => {
+            const dateInput = document.getElementById('news-date');
+            const categoryInput = document.getElementById('news-filter');
+            const newsGrid = document.getElementById('news-grid');
+            
+            // Clear all inputs
+            dateInput.value = '';
+            categoryInput.value = '';
+            
+            const searchInput = document.getElementById('news-search');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+            
+            // Show all articles
+            if (newsGrid && this.data.news) {
+                newsGrid.innerHTML = this.data.news.map(article => this.renderNewsCard(article, true)).join('');
+            }
+        });
+    }
+
+    // Show all articles button
+    const showAllBtn = document.getElementById('show-all-btn');
+    if (showAllBtn) {
+        showAllBtn.addEventListener('click', () => {
+            const newsGrid = document.getElementById('news-grid');
+            const dateInput = document.getElementById('news-date');
+            const categoryInput = document.getElementById('news-filter');
+            
+            // Clear filters
+            dateInput.value = '';
+            categoryInput.value = '';
+            
+            if (newsGrid && this.data.news) {
+                newsGrid.innerHTML = this.data.news.map(article => this.renderNewsCard(article, true)).join('');
+            }
+        });
+    }
+}
+
 
     showImageLightbox(imageUrl) {
         const modal = document.getElementById('modal-container');
