@@ -728,6 +728,30 @@ initializeRouter() {
     }
 }
 
+filterNewsByCategory(category) {
+    const newsGrid = document.getElementById('news-grid');
+    if (!newsGrid) return;
+
+    let filteredNews = this.data.news;
+    
+    if (category && category !== '') {
+        // Filter by category - check if article tags include the category
+        filteredNews = this.data.news.filter(article => {
+            if (!article.tags) return false;
+            
+            // Handle both array and string tags
+            const tags = Array.isArray(article.tags) ? article.tags : 
+                        typeof article.tags === 'string' ? article.tags.split(',').map(t => t.trim()) : [];
+            
+            return tags.some(tag => tag.toLowerCase().includes(category.toLowerCase()));
+        });
+    }
+    
+    // Re-render the filtered news
+    newsGrid.innerHTML = filteredNews.length ? 
+        filteredNews.map(article => this.renderNewsCard(article, true)).join('') :
+        '<p>No articles found in this category.</p>';
+}
 
 // Render a single news article by slug (replace page-content with only this article)
 async renderNewsArticle(slug) {
@@ -1969,6 +1993,16 @@ formatArticleContent(content) {
         if (contactForm) {
             contactForm.addEventListener('submit', this.handleContactForm.bind(this));
         }
+
+        // Category filter
+    const newsFilter = document.getElementById('news-filter');
+    if (newsFilter) {
+        newsFilter.addEventListener('change', (e) => {
+            this.filterNewsByCategory(e.target.value);
+        });
+    }
+
+    
     }
 
     showImageLightbox(imageUrl) {
