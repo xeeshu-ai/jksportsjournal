@@ -63,174 +63,37 @@ class JKSportsJournal {
                     "youtube": "https://youtube.com/jksportsjournal"
                 }
             },
+
+
+            
            "news": [],
 
             
-            "fixtures": [
-                {
-                    "id": 1,
-                    "name": "Regional Football Championship Final",
-                    "startDate": "2024-09-25T15:30:00",
-                    "location": "J&K Sports Complex Stadium",
-                    "homeTeam": "J&K Sports Journal FC",
-                    "awayTeam": "Kashmir Valley United",
-                    "sport": "Football",
-                    "status": "scheduled",
-                    "ticketsAvailable": true
-                },
-                {
-                    "id": 2,
-                    "name": "Inter-Club Basketball Tournament",
-                    "startDate": "2024-09-28T18:00:00",
-                    "location": "Indoor Sports Arena",
-                    "homeTeam": "J&K Hoops",
-                    "awayTeam": "Srinagar Ballers",
-                    "sport": "Basketball",
-                    "status": "scheduled",
-                    "ticketsAvailable": true
-                },
-                {
-                    "id": 3,
-                    "name": "Youth Cricket League Match",
-                    "startDate": "2024-10-02T14:00:00",
-                    "location": "Training Ground A",
-                    "homeTeam": "J&K Junior Cricket",
-                    "awayTeam": "Jammu Young Lions",
-                    "sport": "Cricket",
-                    "status": "scheduled",
-                    "ticketsAvailable": false
-                }
-            ],
+            "fixtures": [],
+
+
+
+
             "teams": [],
 
-            "staff": [
-                {
-                    "id": 1,
-                    "name": "Rajesh Sharma",
-                    "role": "Head Cricket Coach",
-                    "bio": "Former international cricketer with 15 years of professional experience. Specialized in developing batting techniques and team strategy.",
-                    "certifications": ["ICC Level 3 Coaching", "Sports Psychology Certificate"],
-                    "experience": "15 years",
-                    "teams": ["Senior Cricket Team"],
-                    "photo": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=face"
-                },
-                {
-                    "id": 2,
-                    "name": "Maria Rodriguez",
-                    "role": "Football Academy Director",
-                    "bio": "Former Spanish national team player and UEFA-licensed coach. Brings international expertise to youth development programs.",
-                    "certifications": ["UEFA A License", "Youth Development Specialist"],
-                    "experience": "12 years",
-                    "teams": ["Youth Football Academy"],
-                    "photo": "https://images.unsplash.com/photo-1494790108755-2616b612b643?w=300&h=300&fit=crop&crop=face"
-                },
-                {
-                    "id": 3,
-                    "name": "Dr. Priya Patel",
-                    "role": "Sports Medicine Director",
-                    "bio": "Qualified sports medicine physician overseeing athlete health, injury prevention, and rehabilitation programs.",
-                    "certifications": ["MBBS", "Sports Medicine Diploma", "Physiotherapy License"],
-                    "experience": "10 years",
-                    "teams": ["All Teams"],
-                    "photo": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=300&h=300&fit=crop&crop=face"
-                }
-            ],
-            "sponsors": [
-                {
-                    "id": 1,
-                    "name": "Kashmir Bank",
-                    "tier": "title",
-                    "logo": "https://via.placeholder.com/200x100/1e3a8a/ffffff?text=Kashmir+Bank",
-                    "description": "Title sponsor supporting all major tournaments and training programs",
-                    "website": "https://kashmirbank.com",
-                    "partnership": "2020-2027"
-                },
-                {
-                    "id": 2,
-                    "name": "Himalayan Sports Equipment",
-                    "tier": "major",
-                    "logo": "https://via.placeholder.com/200x100/f97316/ffffff?text=Himalayan+Sports",
-                    "description": "Official equipment supplier for all sports programs",
-                    "website": "https://himalayansports.com",
-                    "partnership": "2022-2025"
-                },
-                {
-                    "id": 3,
-                    "name": "Peak Performance Nutrition",
-                    "tier": "supporting",
-                    "logo": "https://via.placeholder.com/200x100/10b981/ffffff?text=Peak+Nutrition",
-                    "description": "Official nutrition partner providing dietary supplements and guidance",
-                    "website": "https://peaknutrition.com",
-                    "partnership": "2023-2024"
-                }
-            ],
-            "training_schedule": [
-                {
-                    "day": "Monday",
-                    "time": "16:00-18:00",
-                    "activity": "Cricket Training - Senior Team",
-                    "location": "Cricket Ground A",
-                    "coach": "Rajesh Sharma"
-                },
-                {
-                    "day": "Monday",
-                    "time": "18:30-20:00",
-                    "activity": "Football Academy - Youth",
-                    "location": "Football Field B",
-                    "coach": "Maria Rodriguez"
-                },
-                {
-                    "day": "Wednesday",
-                    "time": "15:00-17:00",
-                    "activity": "Basketball Practice",
-                    "location": "Indoor Court",
-                    "coach": "TBA"
-                },
-                {
-                    "day": "Saturday",
-                    "time": "09:00-12:00",
-                    "activity": "Athletics Training",
-                    "location": "Track & Field",
-                    "coach": "Athletics Team"
-                }
-            ],
-            "membership_tiers": [
-                {
-                    "name": "Junior Member",
-                    "price": "₹5,000/year",
-                    "benefits": ["Access to youth programs", "Training sessions", "Equipment usage", "Tournament participation"],
-                    "ageLimit": "Under 18"
-                },
-                {
-                    "name": "Senior Member",
-                    "price": "₹12,000/year",
-                    "benefits": ["Full facility access", "All training programs", "Match tickets", "Guest privileges", "Equipment rental"],
-                    "ageLimit": "18+"
-                },
-                {
-                    "name": "Premium Member",
-                    "price": "₹25,000/year",
-                    "benefits": ["VIP facility access", "Personal training", "Priority bookings", "Exclusive events", "Family package"],
-                    "ageLimit": "18+"
-                }
-            ],
-            "faqs": [
-                {
-                    "category": "Membership",
-                    "question": "How do I become a member of J&K Sports Journal?",
-                    "answer": "You can apply for membership by filling out our online application form or visiting our office. We offer different membership tiers based on age and requirements."
-                },
-                {
-                    "category": "Training",
-                    "question": "What are the training hours for different sports?",
-                    "answer": "Training schedules vary by sport and age group. Please check our Training Schedule page for detailed timings or contact our office for specific program information."
-                },
-                {
-                    "category": "Facilities",
-                    "question": "What facilities are available to members?",
-                    "answer": "Our facilities include cricket grounds, football fields, basketball courts, athletics track, gymnasium, changing rooms, and medical facility. Premium members get access to additional VIP amenities."
-                }
-            ]
+
+
+            "staff": [],
+
+
+
+            "sponsors": [],
+
+
+
+            "training_schedule": [],
+
+
+
+            "membership_tiers": []
+
+
+
         };
     }
     
