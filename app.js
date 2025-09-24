@@ -705,6 +705,7 @@ initializeRouter() {
                                 <option value="Football">Football</option>
                                 <option value="Basketball">Basketball</option>
                                 <option value="Athletics">Athletics</option>
+                                <option value="Uncategorized">Uncategorized</option>
                             </select>
                             
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
