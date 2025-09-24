@@ -285,7 +285,7 @@ init() {
         window.addEventListener('resize', this.handleResize.bind(this));
     }
 
-   initializeRouter() {
+initializeRouter() {
     // Handle browser back/forward (history)
     window.addEventListener('popstate', (e) => {
         if (e.state && e.state.page) {
@@ -295,30 +295,39 @@ init() {
 
     // Enhanced parser to handle article routes
     const parseHash = () => {
-        const raw = (window.location.hash || '#/home').slice(1); 
+        const raw = (window.location.hash || '#home').slice(1); // Remove the #
+        console.log('parseHash raw:', raw); // DEBUG
+        
         const parts = raw.split('/').filter(Boolean);
+        console.log('parseHash parts:', parts); // DEBUG
         
-        if (parts.length === 0) return { page: 'home', slug: null };
+        if (parts.length === 0) return { page: 'home', slug: null, articleId: null };
         
-        // Handle article routes: #news/article/123 or #article/123
+        // Handle article routes: #article/123
         if (parts[0] === 'article' && parts.length >= 2) {
-            return { page: 'article', articleId: parts[1] };
+            console.log('Found article route, ID:', parts[1]); // DEBUG
+            return { page: 'article', articleId: parts[1], slug: null };
         }
         
+        // Handle news with article routes: #news/article/123  
         if (parts[0] === 'news' && parts.length >= 3 && parts[1] === 'article') {
-            return { page: 'article', articleId: parts[2] };
+            console.log('Found news article route, ID:', parts[2]); // DEBUG
+            return { page: 'article', articleId: parts[2], slug: null };
         }
         
         // Handle news with slug: #news/my-article-slug
         if (parts[0] === 'news' && parts.length >= 2) {
-            return { page: 'article', slug: decodeURIComponent(parts.slice(1).join('/')) };
+            console.log('Found news slug route:', parts.slice(1).join('/')); // DEBUG
+            return { page: 'news', slug: decodeURIComponent(parts.slice(1).join('/')), articleId: null };
         }
         
-        return { page: parts[0], slug: null };
+        console.log('Standard page route:', parts[0]); // DEBUG
+        return { page: parts[0], slug: null, articleId: null };
     };
 
     // Handle initial hash
     const parsed = parseHash();
+    console.log('Initial parsed:', parsed); // DEBUG
     this.currentSlug = parsed.slug || null;
     this.currentArticleId = parsed.articleId || null;
     this.currentPage = parsed.page || 'home';
@@ -326,11 +335,13 @@ init() {
     // Listen for hash changes
     window.addEventListener('hashchange', () => {
         const p = parseHash();
+        console.log('Hash changed, parsed:', p); // DEBUG
         this.currentSlug = p.slug || null;
         this.currentArticleId = p.articleId || null;
         this.loadPage(p.page || 'home', true);
     }, false);
 }
+
 
 
     setupAccessibility() {
@@ -441,18 +452,27 @@ init() {
         breadcrumbList.innerHTML = breadcrumbHTML;
     }
 
-   renderPageContent(page) {
+  renderPageContent(page) {
+    console.log('=== DEBUG renderPageContent ===');
+    console.log('page:', page);
+    console.log('currentArticleId:', this.currentArticleId);
+    console.log('currentSlug:', this.currentSlug);
+    console.log('URL hash:', window.location.hash);
+    console.log('================================');
+    
     const contentContainer = document.getElementById('page-content');
     let content = '';
     
     // Only handle news with slug if it's actually a news page with slug
     if (page === 'news' && this.currentSlug && !this.currentArticleId) {
+        console.log('Rendering news article by slug');
         this.renderNewsArticle(this.currentSlug);
         return;
     }
 
     switch (page) {
         case 'home':
+            console.log('Rendering home page');
             // Make home page also async to wait for news
             this.renderHomePage().then(homeContent => {
                 contentContainer.innerHTML = homeContent;
@@ -460,6 +480,7 @@ init() {
             });
             return;
         case 'news':
+            console.log('Rendering news page');
             // Handle async news loading
             this.renderNewsPage().then(newsContent => {
                 contentContainer.innerHTML = newsContent;
@@ -467,66 +488,70 @@ init() {
             });
             return;
         case 'article':
+            console.log('Rendering article page');
             // Handle individual articles
             this.renderArticlePage().then(articleContent => {
                 document.getElementById('page-content').innerHTML = articleContent;
                 this.bindDynamicEvents();
             });
             return;
-            case 'fixtures':
-                content = this.renderFixturesPage();
-                break;
-            case 'teams':
-                content = this.renderTeamsPage();
-                break;
-            case 'membership':
-                content = this.renderMembershipPage();
-                break;
-            case 'gallery':
-                content = this.renderGalleryPage();
-                break;
-            case 'about':
-                content = this.renderAboutPage();
-                break;
-            case 'contact':
-                content = this.renderContactPage();
-                break;
-            case 'training':
-                content = this.renderTrainingPage();
-                break;
-            case 'coaches':
-                content = this.renderCoachesPage();
-                break;
-            case 'sponsors':
-                content = this.renderSponsorsPage();
-                break;
-            case 'faq':
-                content = this.renderFAQPage();
-                break;
-            case 'policies':
-                content = this.renderPoliciesPage();
-                break;
-            case 'press-kit':
-                content = this.renderPressKitPage();
-                break;
-            default:
-                content = this.render404Page();
-        }
-
-        contentContainer.innerHTML = content; 
-        // If we're on news and a slug is present, render the single article view
-if (cleanPage === 'news' && this.currentSlug) {
-    // renderNewsArticle will replace page-content with the single article
-    if (typeof this.renderNewsArticle === 'function') {
-        this.renderNewsArticle(this.currentSlug);
-        // clear currentSlug so subsequent navigation to news shows list again
-        this.currentSlug = null;
+        case 'fixtures':
+            console.log('Rendering fixtures page');
+            content = this.renderFixturesPage();
+            break;
+        case 'teams':
+            console.log('Rendering teams page');
+            content = this.renderTeamsPage();
+            break;
+        case 'membership':
+            console.log('Rendering membership page');
+            content = this.renderMembershipPage();
+            break;
+        case 'gallery':
+            console.log('Rendering gallery page');
+            content = this.renderGalleryPage();
+            break;
+        case 'about':
+            console.log('Rendering about page');
+            content = this.renderAboutPage();
+            break;
+        case 'contact':
+            console.log('Rendering contact page');
+            content = this.renderContactPage();
+            break;
+        case 'training':
+            console.log('Rendering training page');
+            content = this.renderTrainingPage();
+            break;
+        case 'coaches':
+            console.log('Rendering coaches page');
+            content = this.renderCoachesPage();
+            break;
+        case 'sponsors':
+            console.log('Rendering sponsors page');
+            content = this.renderSponsorsPage();
+            break;
+        case 'faq':
+            console.log('Rendering FAQ page');
+            content = this.renderFAQPage();
+            break;
+        case 'policies':
+            console.log('Rendering policies page');
+            content = this.renderPoliciesPage();
+            break;
+        case 'press-kit':
+            console.log('Rendering press-kit page');
+            content = this.renderPressKitPage();
+            break;
+        default:
+            console.log('DEFAULT CASE - showing 404 for page:', page);
+            content = this.render404Page();
     }
+    
+    contentContainer.innerHTML = content;
+    this.bindDynamicEvents();
 }
 
-        // Bind new events for dynamically loaded content
-        this.bindDynamicEvents();
-    }
 
    async renderHomePage() {
     // Show loading
@@ -768,39 +793,46 @@ async renderArticlePage() {
         const loadingEl = document.querySelector('.loading-indicator');
         if (loadingEl) loadingEl.classList.remove('hidden');
 
+        // FORCE extract article ID from URL if currentArticleId is not set
+        let articleId = this.currentArticleId;
+        
+        if (!articleId) {
+            // Extract directly from URL hash
+            const hash = window.location.hash; // e.g. "#article/123"
+            const match = hash.match(/#article\/(\d+)/);
+            if (match) {
+                articleId = match[1];
+                console.log('Extracted articleId from URL:', articleId);
+            }
+        }
+        
+        console.log('Looking for article with ID:', articleId);
+        
+        if (!articleId) {
+            console.log('No article ID found');
+            return this.render404Page();
+        }
+
         // Fetch news from Supabase if not already loaded
         if (!this.data.news || this.data.news.length === 0) {
             await this.fetchNewsFromSupabase();
         }
 
-        let article = null;
+        console.log('Available news articles:', this.data.news.map(a => ({id: a.id, title: a.title})));
 
-        // Try to find article by ID first
-        if (this.currentArticleId) {
-            article = this.data.news.find(a => a.id == this.currentArticleId);
-        }
+        // Find the article by ID (convert both to string for comparison)
+        const article = this.data.news.find(a => String(a.id) === String(articleId));
         
-        // If not found by ID, try by slug
-        if (!article && this.currentSlug) {
-            article = this.data.news.find(a => a.slug === this.currentSlug);
+        if (!article) {
+            console.log('Article not found with ID:', articleId);
+            return this.render404Page();
         }
 
-        if (!article) {
-            return `
-                <section class="section">
-                    <div class="container">
-                        <div class="text-center">
-                            <h1>Article Not Found</h1>
-                            <p>The article you're looking for doesn't exist or has been removed.</p>
-                            <a href="#news" class="btn btn--primary">← Back to News</a>
-                        </div>
-                    </div>
-                </section>
-            `;
-        }
+        console.log('Found article:', article.title);
 
         // Try to fetch full content from news_articles table
-        let fullContent = article.content;
+        let fullContent = article.content || article.summary;
+        
         if (window.supabase && article.id) {
             try {
                 const { data: articleData, error } = await window.supabase
@@ -811,13 +843,14 @@ async renderArticlePage() {
                 
                 if (!error && articleData && articleData.content) {
                     fullContent = articleData.content;
+                    console.log('Found detailed content in news_articles table');
                 }
             } catch (err) {
                 console.log('No detailed content found in news_articles table, using summary');
             }
         }
 
-        return `
+        const content = `
             <article class="section">
                 <div class="container" style="max-width: 800px;">
                     <div class="breadcrumb" style="margin-bottom: 2rem;">
@@ -856,24 +889,16 @@ async renderArticlePage() {
             </article>
         `;
 
+        this.hideLoading();
+        return content;
+
     } catch (error) {
         console.error('Error rendering article:', error);
-        return `
-            <section class="section">
-                <div class="container">
-                    <div class="text-center">
-                        <h1>Error Loading Article</h1>
-                        <p>There was an error loading the article. Please try again later.</p>
-                        <a href="#news" class="btn btn--primary">← Back to News</a>
-                    </div>
-                </div>
-            </section>
-        `;
-    } finally {
-        const loadingEl = document.querySelector('.loading-indicator');
-        if (loadingEl) loadingEl.classList.add('hidden');
+        this.hideLoading();
+        return this.render404Page();
     }
 }
+
 
 // Helper method to format article content
 formatArticleContent(content) {
