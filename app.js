@@ -65,7 +65,7 @@ class JKSportsJournal {
             },
 
 
-            
+
            "news": [],
 
             
@@ -293,28 +293,41 @@ init() {
         }
     });
 
-    // Helper to parse a hash like "#/news/my-slug" -> {page: 'news', slug: 'my-slug'}
+    // Enhanced parser to handle article routes
     const parseHash = () => {
-        const raw = (window.location.hash || '#/home').slice(1); // remove leading '#'
-        // raw could be "/news/slug" or "/home"
-        const parts = raw.split('/').filter(Boolean); // remove empty segments
+        const raw = (window.location.hash || '#/home').slice(1); 
+        const parts = raw.split('/').filter(Boolean);
+        
         if (parts.length === 0) return { page: 'home', slug: null };
-        if (parts[0] === 'news' && parts.length >= 2) {
-            return { page: 'news', slug: decodeURIComponent(parts.slice(1).join('/')) };
+        
+        // Handle article routes: #news/article/123 or #article/123
+        if (parts[0] === 'article' && parts.length >= 2) {
+            return { page: 'article', articleId: parts[1] };
         }
-        // default: first segment as page
+        
+        if (parts[0] === 'news' && parts.length >= 3 && parts[1] === 'article') {
+            return { page: 'article', articleId: parts[2] };
+        }
+        
+        // Handle news with slug: #news/my-article-slug
+        if (parts[0] === 'news' && parts.length >= 2) {
+            return { page: 'article', slug: decodeURIComponent(parts.slice(1).join('/')) };
+        }
+        
         return { page: parts[0], slug: null };
     };
 
     // Handle initial hash
     const parsed = parseHash();
     this.currentSlug = parsed.slug || null;
+    this.currentArticleId = parsed.articleId || null;
     this.currentPage = parsed.page || 'home';
 
-    // Listen for further hash changes and route accordingly
+    // Listen for hash changes
     window.addEventListener('hashchange', () => {
         const p = parseHash();
         this.currentSlug = p.slug || null;
+        this.currentArticleId = p.articleId || null;
         this.loadPage(p.page || 'home', true);
     }, false);
 }
@@ -432,17 +445,33 @@ init() {
         const contentContainer = document.getElementById('page-content');
         let content = '';
 if (page === 'news' && this.currentSlug) {
-  this.renderNewsArticle(this.currentSlug);
-  return;
-}
+        this.renderNewsArticle(this.currentSlug);
+        return;
+    }
 
-        switch (page) {
-            case 'home':
-                content = this.renderHomePage();
-                break;
-            case 'news':
-                content = this.renderNewsPage();
-                break;
+    switch (page) {
+        case 'home':
+            // Make home page also async to wait for news
+            this.renderHomePage().then(homeContent => {
+                contentContainer.innerHTML = homeContent;
+                this.bindDynamicEvents();
+            });
+            return;
+        case 'news':
+            // Handle async news loading
+            this.renderNewsPage().then(newsContent => {
+                contentContainer.innerHTML = newsContent;
+                this.bindDynamicEvents();
+            });
+            return;
+        case 'article':
+            // Handle individual articles
+            this.renderArticlePage().then(articleContent => {
+                document.getElementById('page-content').innerHTML = articleContent;
+                this.bindDynamicEvents();
+            });
+            return;
+                
             case 'fixtures':
                 content = this.renderFixturesPage();
                 break;
@@ -498,8 +527,17 @@ if (cleanPage === 'news' && this.currentSlug) {
         this.bindDynamicEvents();
     }
 
-    renderHomePage() {
-        return `
+   async renderHomePage() {
+    // Show loading
+    this.showLoading();
+    
+    try {
+        // Make sure news is loaded first
+        if (!this.data.news || this.data.news.length === 0) {
+            await this.fetchNewsFromSupabase();
+        }
+        
+        const content = `
             <div class="hero">
                 <div class="container">
                     <div class="hero__content">
@@ -512,7 +550,7 @@ if (cleanPage === 'news' && this.currentSlug) {
                     </div>
                 </div>
             </div>
-
+            
             <section class="section">
                 <div class="container">
                     <div class="section__header">
@@ -520,14 +558,17 @@ if (cleanPage === 'news' && this.currentSlug) {
                         <p class="section__subtitle">Stay updated with our latest achievements and announcements</p>
                     </div>
                     <div class="card-grid">
-                        ${this.data.news.map(article => this.renderNewsCard(article)).join('')}
+                        ${this.data.news && this.data.news.length ? 
+                            this.data.news.slice(0, 3).map(article => this.renderNewsCard(article)).join('') :
+                            '<p>Loading news...</p>'
+                        }
                     </div>
                     <div style="text-align: center; margin-top: 2rem;">
                         <a href="#news" class="btn btn--outline">View All News</a>
                     </div>
                 </div>
             </section>
-
+            
             <section class="section section--alt">
                 <div class="container">
                     <div class="section__header">
@@ -542,7 +583,7 @@ if (cleanPage === 'news' && this.currentSlug) {
                     </div>
                 </div>
             </section>
-
+            
             <section class="section">
                 <div class="container">
                     <div class="section__header">
@@ -557,7 +598,7 @@ if (cleanPage === 'news' && this.currentSlug) {
                     </div>
                 </div>
             </section>
-
+            
             <section class="section section--alt">
                 <div class="container">
                     <div class="section__header">
@@ -570,10 +611,29 @@ if (cleanPage === 'news' && this.currentSlug) {
                 </div>
             </section>
         `;
+        
+        this.hideLoading();
+        return content;
+        
+    } catch (error) {
+        console.error('Error rendering home page:', error);
+        this.hideLoading();
+        return `<div class="container"><p>Error loading content. Please refresh the page.</p></div>`;
     }
+}
 
-    renderNewsPage() {
-        return `
+
+    async renderNewsPage() {
+    // Show loading
+    this.showLoading();
+    
+    try {
+        // Make sure news is loaded first
+        if (!this.data.news || this.data.news.length === 0) {
+            await this.fetchNewsFromSupabase();
+        }
+        
+        const content = `
             <section class="section">
                 <div class="container">
                     <div class="section__header">
@@ -595,12 +655,35 @@ if (cleanPage === 'news' && this.currentSlug) {
                     </div>
                     
                     <div class="card-grid" id="news-grid">
-                        ${this.data.news.map(article => this.renderNewsCard(article, true)).join('')}
+                        ${this.data.news && this.data.news.length ? 
+                            this.data.news.map(article => this.renderNewsCard(article, true)).join('') :
+                            '<p>No news articles available.</p>'
+                        }
+                    </div>
+                </div>
+            </section>
+        `;
+        
+        this.hideLoading();
+        return content;
+        
+    } catch (error) {
+        console.error('Error rendering news page:', error);
+        this.hideLoading();
+        return `
+            <section class="section">
+                <div class="container">
+                    <div class="section__header">
+                        <h1 class="section__title">Latest News</h1>
+                        <p style="color: red;">Error loading news articles. Please try again later.</p>
                     </div>
                 </div>
             </section>
         `;
     }
+}
+
+
 // Render a single news article by slug (replace page-content with only this article)
 async renderNewsArticle(slug) {
   const container = document.getElementById('page-content');
@@ -678,6 +761,126 @@ async renderNewsArticle(slug) {
   } finally {
     if (loadingEl) loadingEl.classList.add('hidden');
   }
+}
+async renderArticlePage() {
+    try {
+        const loadingEl = document.querySelector('.loading-indicator');
+        if (loadingEl) loadingEl.classList.remove('hidden');
+
+        // Fetch news from Supabase if not already loaded
+        if (!this.data.news || this.data.news.length === 0) {
+            await this.fetchNewsFromSupabase();
+        }
+
+        let article = null;
+
+        // Try to find article by ID first
+        if (this.currentArticleId) {
+            article = this.data.news.find(a => a.id == this.currentArticleId);
+        }
+        
+        // If not found by ID, try by slug
+        if (!article && this.currentSlug) {
+            article = this.data.news.find(a => a.slug === this.currentSlug);
+        }
+
+        if (!article) {
+            return `
+                <section class="section">
+                    <div class="container">
+                        <div class="text-center">
+                            <h1>Article Not Found</h1>
+                            <p>The article you're looking for doesn't exist or has been removed.</p>
+                            <a href="#news" class="btn btn--primary">← Back to News</a>
+                        </div>
+                    </div>
+                </section>
+            `;
+        }
+
+        // Try to fetch full content from news_articles table
+        let fullContent = article.content;
+        if (window.supabase && article.id) {
+            try {
+                const { data: articleData, error } = await window.supabase
+                    .from('news_articles')
+                    .select('content')
+                    .eq('news_id', article.id)
+                    .single();
+                
+                if (!error && articleData && articleData.content) {
+                    fullContent = articleData.content;
+                }
+            } catch (err) {
+                console.log('No detailed content found in news_articles table, using summary');
+            }
+        }
+
+        return `
+            <article class="section">
+                <div class="container" style="max-width: 800px;">
+                    <div class="breadcrumb" style="margin-bottom: 2rem;">
+                        <a href="#news">← Back to All News</a>
+                    </div>
+                    
+                    ${article.featuredImage ? `
+                        <img src="${article.featuredImage}" 
+                             alt="${article.title}" 
+                             style="width: 100%; height: 400px; object-fit: cover; border-radius: var(--radius-lg); margin-bottom: 2rem;">
+                    ` : ''}
+                    
+                    <div class="article-header" style="margin-bottom: 2rem;">
+                        <h1 style="margin-bottom: 1rem; font-size: 2.5rem; line-height: 1.2;">${article.title}</h1>
+                        
+                        <div class="article-meta" style="color: var(--color-text-secondary); margin-bottom: 1rem; font-size: 1rem;">
+                            <time datetime="${article.datePublished}">${this.formatDate(article.datePublished)}</time>
+                            ${article.author ? `<span> • By ${article.author}</span>` : ''}
+                        </div>
+                        
+                        ${article.tags && article.tags.length ? `
+                            <div class="tags" style="margin-bottom: 1rem;">
+                                ${article.tags.map(tag => `<span class="tag" style="background: var(--color-primary); color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.875rem; margin-right: 0.5rem;">${tag}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="article-content" style="line-height: 1.8; font-size: 1.1rem;">
+                        ${this.formatArticleContent(fullContent)}
+                    </div>
+                    
+                    <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--color-border);">
+                        <a href="#news" class="btn btn--outline">← Back to All News</a>
+                    </div>
+                </div>
+            </article>
+        `;
+
+    } catch (error) {
+        console.error('Error rendering article:', error);
+        return `
+            <section class="section">
+                <div class="container">
+                    <div class="text-center">
+                        <h1>Error Loading Article</h1>
+                        <p>There was an error loading the article. Please try again later.</p>
+                        <a href="#news" class="btn btn--primary">← Back to News</a>
+                    </div>
+                </div>
+            </section>
+        `;
+    } finally {
+        const loadingEl = document.querySelector('.loading-indicator');
+        if (loadingEl) loadingEl.classList.add('hidden');
+    }
+}
+
+// Helper method to format article content
+formatArticleContent(content) {
+    if (!content) return '<p>No content available.</p>';
+    
+    // Convert line breaks to paragraphs
+    const paragraphs = content.split('\n').filter(p => p.trim());
+    return paragraphs.map(p => `<p>${p.trim()}</p>`).join('');
 }
 
     renderFixturesPage() {
@@ -1207,32 +1410,46 @@ async renderNewsArticle(slug) {
     }
 
     // Component rendering methods
-   renderNewsCard(article, detailed = false) {
+  renderNewsCard(article, detailed = false) {
+    const tags = article.tags && Array.isArray(article.tags) ? article.tags : [];
+    
     return `
-        <article class="card">
-            <img src="${article.featuredImage || ''}" alt="${article.title || ''}" class="card__image" loading="lazy">
+        <article class="card" itemscope itemtype="https://schema.org/NewsArticle">
+            ${article.featuredImage ? `
+                <img src="${article.featuredImage}" 
+                     alt="${article.title}" 
+                     class="card__image" 
+                     loading="lazy"
+                     itemprop="image">
+            ` : ''}
             <div class="card__content">
                 <div class="card__meta">
-                    <time datetime="${article.datePublished || ''}">${this.formatDate(article.datePublished)}</time>
-                    <span>•</span>
-                    <span>By ${article.author || 'Sports Desk'}</span>
+                    <time datetime="${article.datePublished}" itemprop="datePublished">
+                        ${this.formatDate(article.datePublished)}
+                    </time>
+                    ${article.author ? `<span itemprop="author"> • By ${article.author}</span>` : ''}
                 </div>
-                <h3 class="card__title">
-                    <a href="#/news/${encodeURIComponent(article.slug || '')}">${article.title || 'Untitled'}</a>
+                <h3 class="card__title" itemprop="headline">
+                    <a href="#article/${article.id}" class="card__link">
+                        ${article.title}
+                    </a>
                 </h3>
-                <p class="card__excerpt">${article.summary || ''}</p>
-                ${detailed ? `
+                <p class="card__excerpt" itemprop="description">
+                    ${article.summary || ''}
+                </p>
+                ${detailed && tags.length ? `
                     <div class="tags">
-                        ${(article.tags || []).map(tag => `<span class="tag">${tag}</span>`).join('')}
+                        ${tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
                     </div>
                 ` : ''}
                 <div class="card__actions">
-                    <a href="#/news/${encodeURIComponent(article.slug || '')}" class="card__link">Read More</a>
+                    <a href="#article/${article.id}" class="card__cta">Read More</a>
                 </div>
             </div>
         </article>
     `;
 }
+
 
 
     renderFixtureCard(fixture, detailed = false) {
