@@ -677,10 +677,16 @@ initializeRouter() {
             await this.fetchNewsFromSupabase();
         }
         
-        // Get today's date for the date picker default value
+        // Get today's date for filtering
         const today = this.getTodayDate();
         
-        // For now, show ALL articles by default (we'll filter by date when user selects a date)
+        // Filter to show ONLY today's articles by default
+        const todaysNews = this.data.news.filter(article => {
+            if (!article.datePublished) return false;
+            const articleDate = new Date(article.datePublished).toISOString().split('T')[0];
+            return articleDate === today;
+        });
+        
         const content = `
             <section class="section">
                 <div class="container">
@@ -703,7 +709,7 @@ initializeRouter() {
                             
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
                                 <label for="news-date" style="white-space: nowrap;">Filter by date:</label>
-                                <input type="date" class="form-control" id="news-date" style="max-width: 160px;">
+                                <input type="date" class="form-control" id="news-date" value="${today}" style="max-width: 160px;">
                                 <button type="button" class="btn btn--outline" id="today-btn" style="white-space: nowrap;">Today</button>
                                 <button type="button" class="btn btn--outline" id="clear-date-btn" style="white-space: nowrap;">All</button>
                             </div>
@@ -711,9 +717,9 @@ initializeRouter() {
                     </div>
                     
                     <div class="card-grid" id="news-grid">
-                        ${this.data.news && this.data.news.length ? 
-                            this.data.news.map(article => this.renderNewsCard(article, true)).join('') :
-                            '<p>No news articles available.</p>'
+                        ${todaysNews.length ? 
+                            todaysNews.map(article => this.renderNewsCard(article, true)).join('') :
+                            `<p>No articles published today. <button type="button" id="show-all-btn" class="btn btn--outline">Show All Articles</button></p>`
                         }
                     </div>
                 </div>
@@ -729,6 +735,7 @@ initializeRouter() {
         return `<section class="section"><div class="container"><div class="section__header"><h1 class="section__title">Latest News</h1><p style="color: red;">Error loading news articles. Please try again later.</p></div></div></section>`;
     }
 }
+
 
 
 
