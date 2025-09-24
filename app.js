@@ -1123,11 +1123,12 @@ async renderArticlePage() {
                             ${article.author ? `<span> • By ${article.author}</span>` : ''}
                         </div>
                         
-                        ${article.tags && article.tags.length ? `
-                            <div class="tags" style="margin-bottom: 1rem;">
-                                ${article.tags.map(tag => `<span class="tag" style="background: var(--color-primary); color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.875rem; margin-right: 0.5rem;">${tag}</span>`).join('')}
-                            </div>
-                        ` : ''}
+                        ${article.tags ? `
+                    <div class="tags" style="margin-bottom: 1rem;">
+                         ${article.tags.split(',').map(tag => `<span class="tag" style="background: var(--color-primary); color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.875rem; margin-right: 0.5rem;">${tag.trim()}</span>`).join('')}
+                    </div>
+                     ` : ''}
+
                     </div>
                     
                     <div class="article-content" style="line-height: 1.8; font-size: 1.1rem;">
