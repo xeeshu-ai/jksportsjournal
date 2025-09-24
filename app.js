@@ -668,8 +668,7 @@ initializeRouter() {
 }
 
 
-    async renderNewsPage() {
-    // Show loading
+ async renderNewsPage() {
     this.showLoading();
     
     try {
@@ -677,6 +676,14 @@ initializeRouter() {
         if (!this.data.news || this.data.news.length === 0) {
             await this.fetchNewsFromSupabase();
         }
+        
+        // Filter to show only today's articles by default
+        const today = this.getTodayDate();
+        const todaysNews = this.data.news.filter(article => {
+            if (!article.datePublished) return false;
+            const articleDate = new Date(article.datePublished).toISOString().split('T')[0];
+            return articleDate === today;
+        });
         
         const content = `
             <section class="section">
@@ -687,22 +694,29 @@ initializeRouter() {
                     </div>
                     
                     <div class="filters-section" style="margin-bottom: 2rem;">
-                        <div class="search-filters">
-                            <input type="text" class="form-control" placeholder="Search news articles..." id="news-search" style="max-width: 300px; display: inline-block; margin-right: 1rem;">
-                            <select class="form-control" id="news-filter" style="max-width: 200px; display: inline-block;">
+                        <div class="search-filters" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+                            <input type="text" class="form-control" placeholder="Search news articles..." id="news-search" style="max-width: 300px;">
+                            
+                            <select class="form-control" id="news-filter" style="max-width: 200px;">
                                 <option value="">All Categories</option>
                                 <option value="Cricket">Cricket</option>
                                 <option value="Football">Football</option>
                                 <option value="Basketball">Basketball</option>
                                 <option value="Athletics">Athletics</option>
                             </select>
+                            
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <label for="news-date" style="white-space: nowrap;">Show articles from:</label>
+                                <input type="date" class="form-control" id="news-date" value="${today}" style="max-width: 160px;">
+                                <button type="button" class="btn btn--outline" id="today-btn" style="white-space: nowrap;">Today</button>
+                            </div>
                         </div>
                     </div>
                     
                     <div class="card-grid" id="news-grid">
-                        ${this.data.news && this.data.news.length ? 
-                            this.data.news.map(article => this.renderNewsCard(article, true)).join('') :
-                            '<p>No news articles available.</p>'
+                        ${todaysNews.length ? 
+                            todaysNews.map(article => this.renderNewsCard(article, true)).join('') :
+                            `<p>No articles published today. <button type="button" id="show-all-btn" class="btn btn--outline">Show All Articles</button></p>`
                         }
                     </div>
                 </div>
@@ -715,18 +729,11 @@ initializeRouter() {
     } catch (error) {
         console.error('Error rendering news page:', error);
         this.hideLoading();
-        return `
-            <section class="section">
-                <div class="container">
-                    <div class="section__header">
-                        <h1 class="section__title">Latest News</h1>
-                        <p style="color: red;">Error loading news articles. Please try again later.</p>
-                    </div>
-                </div>
-            </section>
-        `;
+        return `<section class="section"><div class="container"><p>Error loading news.</p></div></section>`;
     }
 }
+
+
 
 filterNewsByCategory(category) {
     const newsGrid = document.getElementById('news-grid');
@@ -752,6 +759,11 @@ filterNewsByCategory(category) {
         filteredNews.map(article => this.renderNewsCard(article, true)).join('') :
         '<p>No articles found in this category.</p>';
 }
+
+
+
+
+
 searchNews(searchTerm) {
     const newsGrid = document.getElementById('news-grid');
     if (!newsGrid) return;
@@ -780,6 +792,43 @@ searchNews(searchTerm) {
         filteredNews.map(article => this.renderNewsCard(article, true)).join('') :
         `<p>No articles found for "${searchTerm}".</p>`;
 }
+
+
+
+filterNewsByDate(selectedDate) {
+    const newsGrid = document.getElementById('news-grid');
+    if (!newsGrid) return;
+
+    let filteredNews = this.data.news;
+    
+    if (selectedDate) {
+        // Convert selected date to YYYY-MM-DD format for comparison
+        const filterDate = new Date(selectedDate).toISOString().split('T')[0];
+        
+        filteredNews = this.data.news.filter(article => {
+            if (!article.datePublished) return false;
+            
+            // Convert article date to YYYY-MM-DD format
+            const articleDate = new Date(article.datePublished).toISOString().split('T')[0];
+            
+            return articleDate === filterDate;
+        });
+    }
+    
+    // Re-render the filtered news
+    newsGrid.innerHTML = filteredNews.length ? 
+        filteredNews.map(article => this.renderNewsCard(article, true)).join('') :
+        `<p>No articles found for ${selectedDate || 'the selected date'}.</p>`;
+}
+
+// Helper method to get today's date in YYYY-MM-DD format
+getTodayDate() {
+    return new Date().toISOString().split('T')[0];
+}
+
+
+
+
 
 // Render a single news article by slug (replace page-content with only this article)
 async renderNewsArticle(slug) {
@@ -2036,6 +2085,35 @@ formatArticleContent(content) {
             this.searchNews(e.target.value);
         });
     }
+// Date filter
+const newsDate = document.getElementById('news-date');
+if (newsDate) {
+    newsDate.addEventListener('change', (e) => {
+        this.filterNewsByDate(e.target.value);
+    });
+}
+
+// Today button
+const todayBtn = document.getElementById('today-btn');
+if (todayBtn) {
+    todayBtn.addEventListener('click', () => {
+        const dateInput = document.getElementById('news-date');
+        const today = this.getTodayDate();
+        dateInput.value = today;
+        this.filterNewsByDate(today);
+    });
+}
+
+// Show all articles button
+const showAllBtn = document.getElementById('show-all-btn');
+if (showAllBtn) {
+    showAllBtn.addEventListener('click', () => {
+        const newsGrid = document.getElementById('news-grid');
+        if (newsGrid && this.data.news) {
+            newsGrid.innerHTML = this.data.news.map(article => this.renderNewsCard(article, true)).join('');
+        }
+    });
+}
 
     }
 
