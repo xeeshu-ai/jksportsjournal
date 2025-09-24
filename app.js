@@ -771,6 +771,7 @@ searchNews(searchTerm) {
     let filteredNews = this.data.news;
     
     if (searchTerm && searchTerm.trim() !== '') {
+        // SEARCH MODE: Search ALL articles regardless of date
         const term = searchTerm.toLowerCase().trim();
         
         filteredNews = this.data.news.filter(article => {
@@ -785,13 +786,22 @@ searchNews(searchTerm) {
             
             return searchableText.includes(term);
         });
+        
+        // Show search results
+        newsGrid.innerHTML = filteredNews.length ? 
+            filteredNews.map(article => this.renderNewsCard(article, true)).join('') :
+            `<p>No articles found for "${searchTerm}".</p>`;
+            
+    } else {
+        // SEARCH CLEARED: Return to date-filtered view
+        const dateInput = document.getElementById('news-date');
+        const selectedDate = dateInput ? dateInput.value : this.getTodayDate();
+        
+        // Apply the current date filter
+        this.filterNewsByDate(selectedDate);
     }
-    
-    // Re-render the filtered news
-    newsGrid.innerHTML = filteredNews.length ? 
-        filteredNews.map(article => this.renderNewsCard(article, true)).join('') :
-        `<p>No articles found for "${searchTerm}".</p>`;
 }
+
 
 
 
@@ -815,16 +825,19 @@ filterNewsByDate(selectedDate) {
         });
     }
     
+    // Clear search input when date filter is applied
+    const searchInput = document.getElementById('news-search');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+    
     // Re-render the filtered news
     newsGrid.innerHTML = filteredNews.length ? 
         filteredNews.map(article => this.renderNewsCard(article, true)).join('') :
-        `<p>No articles found for ${selectedDate || 'the selected date'}.</p>`;
+        `<p>No articles found for ${selectedDate || 'the selected date'}. <button type="button" id="show-all-btn" class="btn btn--outline">Show All Articles</button></p>`;
 }
 
-// Helper method to get today's date in YYYY-MM-DD format
-getTodayDate() {
-    return new Date().toISOString().split('T')[0];
-}
+
 
 
 
